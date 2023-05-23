@@ -1,0 +1,7 @@
+update_interval = 60
+
+[accounts]
+    [accounts.youraccount]
+    key = "your_mining_key"
+    hashrate = 340
+    miners = 25
