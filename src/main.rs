@@ -26,6 +26,8 @@ lazy_static::lazy_static! {
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
+    println!("Setting up tool and retrieving information. Depending on server usage this may take a while.");
+    
     log::set_boxed_logger(Box::new(LOGGER.deref())).unwrap();
     log::set_max_level(log::LevelFilter::Info);
 
