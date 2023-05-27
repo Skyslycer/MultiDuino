@@ -1,20 +1,18 @@
-use std::{collections::VecDeque, sync::{Mutex, Arc}};
+use std::{
+    collections::VecDeque,
+    sync::{Arc, Mutex},
+};
 
 use log::{Metadata, Record};
 
 static MAX_LOGS: usize = 1000;
 
+#[derive(Default)]
 pub struct VecLogger {
     logs: Arc<Mutex<VecDeque<String>>>,
 }
 
 impl VecLogger {
-    pub fn new() -> Self {
-        Self {
-            logs: Arc::new(Mutex::new(VecDeque::new())),
-        }
-    }
-
     pub fn logs(&self) -> VecDeque<String> {
         self.logs.lock().unwrap().clone()
     }
@@ -23,7 +21,7 @@ impl VecLogger {
         let mut logs = self.logs.lock().unwrap();
         logs.push_back(message);
         while self.logs().len() > MAX_LOGS {
-            logs.pop_front();
+            logs.pop_back();
         }
     }
 }
@@ -35,9 +33,12 @@ impl log::Log for VecLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            self.logs.lock().unwrap().push_back(format!("{}", record.args()));
+            self.logs
+                .lock()
+                .unwrap()
+                .push_back(format!("{}", record.args()));
             while self.logs().len() > MAX_LOGS {
-                self.logs().pop_front();
+                self.logs.lock().unwrap().pop_front();
             }
         }
     }
