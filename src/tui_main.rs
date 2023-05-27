@@ -1,17 +1,17 @@
-use std::{
-    collections::HashMap,
-    io,
-    sync::{Arc, RwLock},
-    time::{Duration, Instant},
-};
-
 use crossterm::{
     cursor::MoveTo,
     event::{self, KeyEvent},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
 };
-use tokio::sync::mpsc::Sender;
+use futures::future::FutureExt;
+use std::{
+    collections::HashMap,
+    io,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+use tokio::sync::{mpsc::Sender, RwLock};
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
@@ -84,8 +84,9 @@ pub async fn init(
                     match active_menu_item {
                         structs::MenuItem::Logs => rect.render_widget(render_logs(), chunks[1]),
                         structs::MenuItem::Dashboard => {
-                            let accounts = tui_accounts.read().expect("TODO");
-                            let account_list = tui_accounts_list.read().expect("TODO");
+                            let accounts = tui_accounts.read().now_or_never().unwrap();
+                            let account_list = tui_accounts_list.read().now_or_never().unwrap();
+
                             let pets_chunks = Layout::default()
                                 .direction(Direction::Horizontal)
                                 .constraints(
@@ -123,7 +124,7 @@ pub async fn init(
                     KeyCode::Down => match active_menu_item {
                         structs::MenuItem::Dashboard => {
                             if let Some(selected) = account_list_state.selected() {
-                                let accounts = tui_accounts.read().expect("TODO");
+                                let accounts = tui_accounts.read().await;
                                 if selected >= accounts.len() - 1 {
                                     account_list_state.select(Some(0));
                                 } else {
@@ -139,7 +140,7 @@ pub async fn init(
                                 if selected > 0 {
                                     account_list_state.select(Some(selected - 1));
                                 } else {
-                                    let accounts = tui_accounts.read().expect("TODO");
+                                    let accounts = tui_accounts.read().await;
                                     account_list_state.select(Some(accounts.len() - 1));
                                 }
                             }

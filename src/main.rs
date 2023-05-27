@@ -1,7 +1,3 @@
-use crossterm::cursor::MoveTo;
-use crossterm::event::{self};
-use crossterm::execute;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
 use lazy_static::__Deref;
 use log::{error, info, warn};
 use rand::{Rng, SeedableRng};
@@ -10,15 +6,14 @@ use chrono::Local;
 use config::Config;
 use rand::rngs::StdRng;
 use std::collections::HashMap;
+use std::sync::Arc;
 use structs::DuinoConfig;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
-use crossterm::event::{Event as CEvent, KeyCode};
 use sha1::{Digest, Sha1};
-use std::sync::{mpsc, Arc, RwLock};
-use std::time::{Duration, Instant};
-use std::{io, thread};
+use std::time::Duration;
 
 mod structs;
 mod tui_main;
@@ -56,8 +51,8 @@ async fn main() {
         warnings: 0,
     };
     {
-        let mut accounts = tui_accounts.write().unwrap();
-        let mut account_list = tui_accounts_list.write().unwrap();
+        let mut accounts = tui_accounts.write().await;
+        let mut account_list = tui_accounts_list.write().await;
         for (name, account) in settings.accounts.iter() {
             let cloned_name = name.clone();
             let cloned_account = account.clone();
@@ -198,8 +193,8 @@ async fn run_update(
         new_accounts.insert("Global".to_string(), global.clone());
         new_accounts_list.push("Global".to_string());
         {
-            let mut unlocked_accounts = accounts.write().expect("TODO");
-            let mut unlocked_account_list = account_list.write().expect("TODO");
+            let mut unlocked_accounts = accounts.write().await;
+            let mut unlocked_account_list = account_list.write().await;
             unlocked_accounts.clear();
             unlocked_account_list.clear();
             unlocked_accounts.extend(new_accounts);
